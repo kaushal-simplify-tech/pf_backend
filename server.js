@@ -1,0 +1,24 @@
+const http = require("http");
+const express = require("express");
+const body_parser = require("body-parser");
+const logger = require("morgan");
+const cors = require("cors");
+const app = express();
+const port = "8000";
+const server = http.createServer(app);
+const index_router = require("./routes");
+const path = require("path");
+app.use(logger("dev"));
+app.use(cors());
+
+app.use("/static", express.static(path.join(__dirname, "public")));
+
+app.use(body_parser.json());
+app.use(body_parser.urlencoded({ extended: true }));
+index_router(app);
+
+server.listen(port, () => {
+	console.log(`Server running at ${port}`);
+});
+
+module.exports = app;
