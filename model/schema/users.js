@@ -12,8 +12,6 @@ const UserSchema = new Schema({
     },
     password:{
         type:String,
-        minLength:8,
-        maxLength:16,
         required:true
     },
     phone:{
@@ -42,14 +40,20 @@ const UserSchema = new Schema({
 });
 
 UserSchema.path("email").validate(function (email) {
-  var emailRegex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
-  return emailRegex.test(email.text); 
+    console.log("email",email)
+    if(email && email.length > 0){
+        var emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return emailRegex.test(email); 
+    }else{
+        return true
+    }
+  
 }, "The email field is not valid.");
 
 
 UserSchema.path("phone").validate(function (phone) {
-    var phoneRegex = /^\+?([0-9]{2})\)?[-. ]?([0-9]{4})[-. ]?([0-9]{4})$/;
-    return phoneRegex.test(phone.text); 
+    var phoneRegex = /^(\+\d{1,2}.-)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+    return phoneRegex.test(phone); 
 }, "The Phone field is not valid.");
 
 module.exports = mongoose.model('User', UserSchema)
