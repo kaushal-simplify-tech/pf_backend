@@ -12,9 +12,9 @@ const path = require("path");
 const session = require('express-session');
 var cookie_config = {
 	secret: process.env.COOKIE_SECRET,
-	resave: true,
-	saveUninitialized: true,
-	cookie:{},
+	// resave: true,
+	// saveUninitialized: true,
+	// cookie:{secure:false},
 }
 
 if(process.env.NODE_ENV === 'production'){

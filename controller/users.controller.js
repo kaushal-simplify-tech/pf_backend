@@ -5,7 +5,11 @@ const RESPONSE_MESSAGE = require("../config/cms.message").cmsMessage;
 module.exports = {
     async login(req,res){
         try{
-            const user_login_res = await user_service.login(req);
+            const user_login_res = await user_service.login(req.body);
+            // console.log("user_login_res",user_login_res);
+            if(user_login_res && user_login_res.token){
+                req.session.token = user_login_res.token;
+            }
             res.status(STATUS.SUCCESSSTATUS).send({
                 data:user_login_res,
                 status:STATUS.SUCCESS
@@ -20,8 +24,12 @@ module.exports = {
         }
     },
     async register(req,res){
+        console.log("req.session",req.session);
         try{
-            const user_register_res = await user_service.register(req);
+            const user_register_res = await user_service.register(req.body);
+            if(user_register_res && user_register_res.token){
+                req.session.token = user_register_res.token;
+            }
             res.status(STATUS.SUCCESSSTATUS).send({
                 data:user_register_res,
                 status:STATUS.SUCCESS
@@ -37,7 +45,10 @@ module.exports = {
     },
     async socialRegister(req,res){
         try{
-            const user_register_res = await user_service.socialRegister(req);
+            const user_register_res = await user_service.socialRegister(req.body);
+            if(user_register_res && user_register_res.token){
+                req.session.token = user_register_res.token;
+            }
             res.status(STATUS.SUCCESSSTATUS).send({
                 data:user_register_res,
                 status:STATUS.SUCCESS

@@ -5,6 +5,8 @@ const Joi = require('joi')
 const bcrypt = require("bcryptjs");
 
 const userSchema = Joi.object({
+  firstName:Joi.string().required(),
+  lastName:Joi.string().required(),
   username: Joi.string(),
   email: Joi.string().email({
     minDomainSegments: 2,
@@ -23,6 +25,8 @@ const userSchema = Joi.object({
 }).or("phone", "email");
 
 const socialSchema = Joi.object({
+    firstName:Joi.string().required(),
+    lastName:Joi.string().required(),
     username: Joi.string(),
     email: Joi.string().email({
       minDomainSegments: 2,
@@ -38,17 +42,70 @@ const socialSchema = Joi.object({
     instagram_id: Joi.string(),
   }).or("facebook_id", "google_id","twitter_id","linkedin_id","instagram_id");
 
+const loginSchema = Joi.object({
+    username:Joi.string().required(),
+    password:Joi.string().required()
+})
+
+// const loginSche
+
 module.exports = {
-    async login(req){
-        // return req.body
-    },
-    async register(req){
-        const {email,username,password} = req.body
-        const {value,error} = userSchema.validate(req.body)
+    async login(body){
+        const {value,error} = loginSchema.validate(body)
         if(error){
             throw error.message
         }
-        console.log("req.session",req.session);
+        // return value
+        if(value){
+            const findUser = await User.findOne({
+                $or:[
+                    {
+                        email:value.username,
+                    },
+                    {
+                        username:value.username
+                    }
+                ]
+            });
+            if(findUser){
+                if(bcrypt.compareSync(value.password, findUser.password)){
+                    const set_response = {
+                        email:findUser.email,
+                        username:findUser.username,
+                        phone:findUser.phone || null,
+                        facebook_id:findUser.facebook_id,
+                        google_id:findUser.google_id,
+                        twitter_id:findUser.twitter_id,
+                        linkedin_id:findUser.linkedin_id,
+                        instagram_id:findUser.instagram_id,
+                        _id:findUser._id,
+                        firstName:findUser.firstName,
+                        lastName:findUser.lastName
+                    }
+                    const jwt_string = JwtToken.sign(
+                        set_response,
+                        constant.JWTOBJCMS.secret,
+                        {
+                          expiresIn: constant.JWTOBJCMS.expiresIn,
+                          algorithm: constant.JWTOBJCMS.algo,
+                        }
+                    );
+                    set_response.token = jwt_string
+                    return set_response
+                }else{
+                    throw `Incorrect Password!`
+                }
+            }else{
+                throw `User not found!`
+            }
+        }
+    },
+    async register(body){
+        const {email,username,password} = body
+        const {value,error} = userSchema.validate(body)
+        if(error){
+            throw error.message
+        }
         const getUser = await User.findOne({
             $or:[
                 {
@@ -65,7 +122,6 @@ module.exports = {
             return this.saveUser(value)
                 .then((res) => {
                     if(res){
-                        req.session.token = res.token
                         return res
                     }
                 })
@@ -76,12 +132,10 @@ module.exports = {
         }else{
             throw  `User Exist!`
         }
-        // return req.body
     },
-    async socialRegister(req){
-        // return req.body
-        const {email,username,facebook_id,instagram_id,linkedin_id,google_id,twitter_id} = req.body
-        const {value,error} = socialSchema.validate(req.body)
+    async socialRegister(body){
+        const {email,username,facebook_id,instagram_id,linkedin_id,google_id,twitter_id} = body
+        const {value,error} = socialSchema.validate(body)
         if(error){
             throw error.message
         }
@@ -127,7 +181,6 @@ module.exports = {
             return this.saveUser(value)
                 .then((res) => {
                     if(res){
-                        req.session.token = res.token
                         return res
                     }
                 })
@@ -160,7 +213,6 @@ module.exports = {
                 }
             );
             set_response.token = jwt_string
-            req.session.token = set_response.token
             return set_response
         }
     },
@@ -177,7 +229,9 @@ module.exports = {
                 twitter_id:res.twitter_id,
                 linkedin_id:res.linkedin_id,
                 instagram_id:res.instagram_id,
-                _id:res._id
+                _id:res._id,
+                firstName:res.firstName,
+                lastName:res.lastName
             }
             const jwt_string = JwtToken.sign(
                 set_response,
