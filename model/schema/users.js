@@ -13,18 +13,12 @@ const UserSchema = new Schema({
       unique: true,
       default:null,
     },
-    email: { 
-      type: String,
-      unique: true,
-      default:null,
-    },
+    email:{type: String, trim: true, index: true, unique: true, sparse: true},
     password:{
         type:String,
         required:true
     },
-    phone:{
-        type:String,
-    },
+    phone:{type: String, trim: true, index: true, unique: true, sparse: true},
     facebook_id:{
         type:String,
         default:null,
@@ -44,6 +38,13 @@ const UserSchema = new Schema({
     instagram_id:{
         type:String,
         default:null,
+    },
+    role_id:{
+        type:String,
+        default:null
+    },
+    dateOfBirth:{
+        type:Date,
     }
 });
 

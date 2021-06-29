@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 mongoose.connect(
-    process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/user_services',
+    process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pf_uat',
     {
       useCreateIndex: true,
       useNewUrlParser: true,
@@ -15,6 +15,8 @@ mongoose.connect(
 mongoose.Promise = global.Promise
 
 module.exports = {
-    User:require("./schema/users")
+    User:require("./schema/users"),
+    Module:require("./schema/modules"),
+    Role:require("./schema/roles")
 }
 

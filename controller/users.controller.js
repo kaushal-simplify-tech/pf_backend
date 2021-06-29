@@ -62,4 +62,23 @@ module.exports = {
             })
         }
     },
+    async dump(req,res){
+        try{
+            const user_dump_res = await user_service.dump(req.body);
+            if(user_dump_res && user_dump_res.token){
+                req.session.token = user_dump_res.token;
+            }
+            res.status(STATUS.SUCCESSSTATUS).send({
+                data:user_dump_res,
+                status:STATUS.SUCCESS
+            })
+        }catch(err){
+            console.log('user.controller => dump func',err);
+            res.status(STATUS.INTERNALSERVERERRORSTATUS).send({
+                data:null,
+                message:err ? err : RESPONSE_MESSAGE.INTERNAL_SERVER,
+                status:STATUS.ERROR
+            })
+        }
+    }
 }

@@ -1,8 +1,10 @@
-const {User} = require("../model");
+const {User,Module,Role} = require("../model");
 const JwtToken = require("jsonwebtoken");
 const constant = require("../config/constant");
 const Joi = require('joi')
 const bcrypt = require("bcryptjs");
+const moduleJson = require("../dump/modules");
+const rolesJson = require("../dump/roles");
 
 const userSchema = Joi.object({
   firstName:Joi.string().required(),
@@ -22,6 +24,8 @@ const userSchema = Joi.object({
   twitter_id: Joi.string(),
   linkedin_id: Joi.string(),
   instagram_id: Joi.string(),
+  dateOfBirth:Joi.date().required(),
+  identifier:Joi.string()
 }).or("phone", "email");
 
 const socialSchema = Joi.object({
@@ -40,6 +44,8 @@ const socialSchema = Joi.object({
     twitter_id: Joi.string(),
     linkedin_id: Joi.string(),
     instagram_id: Joi.string(),
+    dateOfBirth:Joi.date().required(),
+    identifier:Joi.string()
   }).or("facebook_id", "google_id","twitter_id","linkedin_id","instagram_id");
 
 const loginSchema = Joi.object({
@@ -101,22 +107,25 @@ module.exports = {
         }
     },
     async register(body){
-        const {email,username,password} = body
+        const {email,username,password,phone} = body
         const {value,error} = userSchema.validate(body)
         if(error){
             throw error.message
         }
+        var whereCondition = [];
+        if(email){
+            whereCondition.push({email:email})
+        }
+        if(phone){
+            whereCondition.push({phone:phone})
+        }
+        if(username){
+            whereCondition.push({username:username})
+        }
         const getUser = await User.findOne({
-            $or:[
-                {
-                    email:email,
-                },
-                {
-                    username:username
-                }
-            ]
+            $or:whereCondition
         });
-        // console.log("getUser",getUser);
+        // console.log("getUser",getUser,"phone",phone);
         if(!getUser){
             value.password = await bcrypt.hashSync(value.password, 10);
             return this.saveUser(value)
@@ -217,6 +226,16 @@ module.exports = {
         }
     },
     async saveUser(obj,callback){
+        console.log("obj",obj);
+        if(!obj.identifier){
+            obj.identifier = 'pf_users';
+        }
+        // console.log("identifier",obj.identifier)
+        let roles = await Role.findOne({identifier:obj.identifier});
+        // console.log("roles",roles);
+        if(roles){
+            obj.role_id = roles._id
+        }
         var user = new User(obj)
         return await user.save().then((res) => {
             // console.log("res",res);
@@ -229,9 +248,9 @@ module.exports = {
                 twitter_id:res.twitter_id,
                 linkedin_id:res.linkedin_id,
                 instagram_id:res.instagram_id,
-                _id:res._id,
                 firstName:res.firstName,
-                lastName:res.lastName
+                lastName:res.lastName,
+                dateOfBirth:res.dateOfBirth
             }
             const jwt_string = JwtToken.sign(
                 set_response,
@@ -269,4 +288,36 @@ module.exports = {
         }
         return result;
     },
+    async dump(req){
+        // console.log(moduleJson);
+        // return moduleJson
+        var promise = await moduleJson.map(async (each) => {
+            const resp = await Module.findOne({identifier:each.identifier});
+            if(!resp){
+                return await Module.create(each)
+            }else{
+                return resp
+            }
+        });
+
+        return await Promise.all(promise).then(async (data) => {
+            await rolesJson.forEach(async (eachObj,index) => {
+                const re = await Role.findOne({identifier:eachObj.identifier});
+                if(!re){
+                        console.log("identifier",eachObj.modules);
+                        let ids = [];
+                        await data.filter(async (e) => {
+                            let find = await eachObj.modules.includes(e.identifier)
+                            if(find){
+                                ids.push(e._id)
+                            }
+                        });
+                        Role.create({...eachObj,modules:ids});
+                        // console.log('ids',ids);
+                        // return id;
+                }
+                return re
+            })
+        })
+    }
 }
